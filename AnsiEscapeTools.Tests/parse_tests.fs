@@ -25,73 +25,79 @@ module private Helpers =
     let matcherOf name test =
         new NHamcrest.CustomMatcher<obj>(name, test)
 
-    let emptyResult = matcherOf "empty" (matchSuccessWith [Empty])
-    
-    let textResult txt = matcherOf "text" (matchSuccessWith [Text txt])
-
-    let parseResult expected = matcherOf "parse" (matchSuccessWith expected)
+    let resultIn expected = matcherOf "parse" (matchSuccessWith expected)
 
     let parser = new AnsiEscapeParser()
 
+    let parsing s = parser.Parse(s)
+
+    let parsing' s = (fun () -> parser.Parse(s) |> ignore)
+
 [<Fact>]
 let ``parsing an empty string gives an empty result back`` () =
-    parser.Parse("") |> should be emptyResult
+    parsing "" |> should resultIn [Empty]
 
 
 [<Fact>]
 let ``parsing strings without ansi escapes results in a single Text result`` () =
-    parser.Parse("My text without any escapes") |> should be (textResult "My text without any escapes")
-    parser.Parse(" \t ") |> should be (textResult " \t ")
+    parsing "My text without any escapes" |> should resultIn [Text "My text without any escapes"]
+    parsing " \t " |> should resultIn [Text " \t "]
 
 [<Fact>]
 let ``parsing strings with one or more escape codes works`` () =
-    parser.Parse("abc\x1b[2Adef") |> should be (parseResult [Text "abc"; CursorUp 2; Text "def"])
-    parser.Parse("abc\x1b[2A") |> should be (parseResult [Text "abc"; CursorUp 2])
-    parser.Parse("\x1b[12Adef") |> should be (parseResult [CursorUp 12; Text "def"])
-    parser.Parse("abc\x1b[12Adef\x1b[4A") |> should be (parseResult [Text "abc"; CursorUp 12; Text "def"; CursorUp 4])
-    parser.Parse("abc\x1b[12A\x1b[4A") |> should be (parseResult [Text "abc"; CursorUp 12; CursorUp 4])
+    parsing "abc\x1b[2Adef" |> should resultIn [Text "abc"; CursorUp 2; Text "def"]
+    parsing "abc\x1b[2A" |> should resultIn [Text "abc"; CursorUp 2]
+    parsing "\x1b[12Adef" |> should resultIn [CursorUp 12; Text "def"]
+    parsing "abc\x1b[12Adef\x1b[4A" |> should resultIn [Text "abc"; CursorUp 12; Text "def"; CursorUp 4]
+    parsing "abc\x1b[12A\x1b[4A" |> should resultIn [Text "abc"; CursorUp 12; CursorUp 4]
+
+
+[<Fact>]
+let ``parsing unknown command throws an exception`` () =
+    parsing' "\x1b[12Y" |> should throw typeof<System.Exception>
+
 
 [<Fact>]
 let ``parsing CursorUp works`` () =
-    parser.Parse("\x1b[A") |> should be (parseResult [CursorUp 1])
-    parser.Parse("\x1b[11A") |> should be (parseResult [CursorUp 11])
+    parsing "\x1b[A" |> should resultIn [CursorUp 1]
+    parsing "\x1b[11A" |> should resultIn [CursorUp 11]
 
 [<Fact>]
 let ``parsing CursorDown works`` () =
-    parser.Parse("\x1b[B") |> should be (parseResult [CursorDown 1])
-    parser.Parse("\x1b[13B") |> should be (parseResult [CursorDown 13])
+    parsing "\x1b[B" |> should resultIn [CursorDown 1]
+    parsing "\x1b[13B" |> should resultIn [CursorDown 13]
 
 [<Fact>]
 let ``parsing CursorForward works`` () =
-    parser.Parse("\x1b[C") |> should be (parseResult [CursorForward 1])
-    parser.Parse("\x1b[3C") |> should be (parseResult [CursorForward 3])
+    parsing "\x1b[C" |> should resultIn [CursorForward 1]
+    parsing "\x1b[3C" |> should resultIn [CursorForward 3]
 
 [<Fact>]
 let ``parsing CursorRight works`` () =
-    parser.Parse("\x1b[D") |> should be (parseResult [CursorBack 1])
-    parser.Parse("\x1b[5D") |> should be (parseResult [CursorBack 5])
+    parsing "\x1b[D" |> should resultIn [CursorBack 1]
+    parsing "\x1b[5D" |> should resultIn [CursorBack 5]
 
 [<Fact>]
 let ``parsing CursorNextLine works`` () =
-    parser.Parse("\x1b[E") |> should be (parseResult [CursorNextLine 1])
-    parser.Parse("\x1b[7E") |> should be (parseResult [CursorNextLine 7])
+    parsing "\x1b[E" |> should resultIn [CursorNextLine 1]
+    parsing "\x1b[7E" |> should resultIn [CursorNextLine 7]
 
 [<Fact>]
 let ``parsing CursorPrevLine works`` () =
-    parser.Parse("\x1b[1F") |> should be (parseResult [CursorPrevLine 1])
-    parser.Parse("\x1b[6F") |> should be (parseResult [CursorPrevLine 6])
+    parsing "\x1b[F" |> should resultIn [CursorPrevLine 1]
+    parsing "\x1b[6F" |> should resultIn [CursorPrevLine 6]
 
 [<Fact>]
 let ``parsing CursorHorizontalAbs works`` () =
-    parser.Parse("\x1b[1G") |> should be (parseResult [CursorHorizontalAbs 1])
-    parser.Parse("\x1b[2G") |> should be (parseResult [CursorHorizontalAbs 2])
+    parsing "\x1b[G" |> should resultIn [CursorHorizontalAbs 1]
+    parsing "\x1b[2G" |> should resultIn [CursorHorizontalAbs 2]
 
 [<Fact>]
 let ``parsing CursorPosition works`` () =
-    parser.Parse("\x1b[H") |> should be (parseResult [CursorPosition(1, 1)])
-    parser.Parse("\x1b[;3H") |> should be (parseResult [CursorPosition(1, 3)])
-    parser.Parse("\x1b[2;H") |> should be (parseResult [CursorPosition(2, 1)])
-    parser.Parse("\x1b[2H") |> should be (parseResult [CursorPosition(2, 1)])
-    parser.Parse("\x1b[2;3H") |> should be (parseResult [CursorPosition(2, 3)])
+    parsing "\x1b[H" |> should resultIn [CursorPosition(1, 1)]
+    parsing "\x1b[;3H" |> should resultIn [CursorPosition(1, 3)]
+    parsing "\x1b[2;H" |> should resultIn [CursorPosition(2, 1)]
+    parsing "\x1b[2H" |> should resultIn [CursorPosition(2, 1)]
+    parsing "\x1b[2;3H" |> should resultIn [CursorPosition(2, 3)]
 
 

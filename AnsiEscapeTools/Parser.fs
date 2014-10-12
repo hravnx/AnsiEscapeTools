@@ -1,6 +1,7 @@
 ﻿namespace AnsiEscapeTools.Parser
 
 open System
+open System.Diagnostics
 
 type AnsiEscapeSegment =
     | Empty
@@ -47,19 +48,20 @@ module private Helpers =
         (parts.[0], parts.[1])
         
 
-    let escapeCode (letter:string) (arglist:string) =
-        match letter.[0] with
-        | 'A' -> CursorUp (arglist |> oneArg)
-        | 'B' -> CursorDown (arglist |> oneArg)
-        | 'C' -> CursorForward (arglist |> oneArg)
-        | 'D' -> CursorBack (arglist |> oneArg)
-        | 'E' -> CursorNextLine (arglist |> oneArg)
-        | 'F' -> CursorPrevLine (arglist |> oneArg)
-        | 'G' -> CursorHorizontalAbs (arglist |> oneArg)
-        | 'H' -> CursorPosition (arglist |> twoArgs)
+    let escapeCode letter arglist =
+        match letter with
+        | "A" -> CursorUp (arglist |> oneArg)
+        | "B" -> CursorDown (arglist |> oneArg)
+        | "C" -> CursorForward (arglist |> oneArg)
+        | "D" -> CursorBack (arglist |> oneArg)
+        | "E" -> CursorNextLine (arglist |> oneArg)
+        | "F" -> CursorPrevLine (arglist |> oneArg)
+        | "G" -> CursorHorizontalAbs (arglist |> oneArg)
+        | "H" -> CursorPosition (arglist |> twoArgs)
         | _ -> failwithf "Unsupported option %s" letter
 
-    let rec parse (s:string) start (ms:MatchCollection) idx = seq {
+    let rec parse (s:string) start (ms:MatchCollection) (idx:int) = seq {
+        Debug.WriteLine("bla {0}", idx)
         if idx >= ms.Count then
             if start < s.Length then yield Text (s.Substring(start))
         else let m = ms.[idx] 
@@ -73,7 +75,8 @@ type AnsiEscapeParser() =
 
     member this.Parse (s:string) =
         if String.IsNullOrEmpty(s) then Success [Empty]
-        else let matches =  escapeMatcher.Matches(s)
+        else let matches = escapeMatcher.Matches(s)
+             let yy = (parse s 0 matches 0) |> Seq.toList
              Success (parse s 0 matches 0)
              
 
