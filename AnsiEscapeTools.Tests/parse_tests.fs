@@ -33,6 +33,12 @@ module private Helpers =
 
     let parsing' s = (fun () -> parser.Parse(s) |> ignore)
 
+
+[<Fact>]
+let ``unknown command throws an exception`` () =
+    parsing' "\x1b[12Y" |> should throw typeof<System.Exception>
+
+
 [<Fact>]
 let ``an empty string gives an empty result back`` () =
     parsing "" |> should resultIn [Empty]
@@ -43,6 +49,7 @@ let ``strings without ansi escapes results in a single Text result`` () =
     parsing "My text without any escapes" |> should resultIn [Text "My text without any escapes"]
     parsing " \t " |> should resultIn [Text " \t "]
 
+
 [<Fact>]
 let ``strings with one or more escape codes works`` () =
     parsing "abc\x1b[2Adef" |> should resultIn [Text "abc"; CursorUp 2; Text "def"]
@@ -50,11 +57,6 @@ let ``strings with one or more escape codes works`` () =
     parsing "\x1b[12Adef" |> should resultIn [CursorUp 12; Text "def"]
     parsing "abc\x1b[12Adef\x1b[4A" |> should resultIn [Text "abc"; CursorUp 12; Text "def"; CursorUp 4]
     parsing "abc\x1b[12A\x1b[4A" |> should resultIn [Text "abc"; CursorUp 12; CursorUp 4]
-
-
-[<Fact>]
-let ``unknown command throws an exception`` () =
-    parsing' "\x1b[12Y" |> should throw typeof<System.Exception>
 
 
 [<Fact>]
