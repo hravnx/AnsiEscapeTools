@@ -2,7 +2,7 @@
 
 open System
 
-type AnsiEscapeChunk =
+type AnsiEscapeSegment =
     | Empty
     | Text of string
     | CursorUp of int
@@ -12,7 +12,7 @@ type AnsiEscapeChunk =
 
 type AnsiEscapeParserResult =
     | Error of (string * int * int)
-    | Success of AnsiEscapeChunk seq
+    | Success of AnsiEscapeSegment seq
 
 
 [<AutoOpen>]
