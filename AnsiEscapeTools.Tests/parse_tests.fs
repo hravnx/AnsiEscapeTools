@@ -34,17 +34,17 @@ module private Helpers =
     let parsing' s = (fun () -> parser.Parse(s) |> ignore)
 
 [<Fact>]
-let ``parsing an empty string gives an empty result back`` () =
+let ``an empty string gives an empty result back`` () =
     parsing "" |> should resultIn [Empty]
 
 
 [<Fact>]
-let ``parsing strings without ansi escapes results in a single Text result`` () =
+let ``strings without ansi escapes results in a single Text result`` () =
     parsing "My text without any escapes" |> should resultIn [Text "My text without any escapes"]
     parsing " \t " |> should resultIn [Text " \t "]
 
 [<Fact>]
-let ``parsing strings with one or more escape codes works`` () =
+let ``strings with one or more escape codes works`` () =
     parsing "abc\x1b[2Adef" |> should resultIn [Text "abc"; CursorUp 2; Text "def"]
     parsing "abc\x1b[2A" |> should resultIn [Text "abc"; CursorUp 2]
     parsing "\x1b[12Adef" |> should resultIn [CursorUp 12; Text "def"]
@@ -53,47 +53,47 @@ let ``parsing strings with one or more escape codes works`` () =
 
 
 [<Fact>]
-let ``parsing unknown command throws an exception`` () =
+let ``unknown command throws an exception`` () =
     parsing' "\x1b[12Y" |> should throw typeof<System.Exception>
 
 
 [<Fact>]
-let ``parsing CursorUp works`` () =
+let ``CursorUp works`` () =
     parsing "\x1b[A" |> should resultIn [CursorUp 1]
     parsing "\x1b[11A" |> should resultIn [CursorUp 11]
 
 [<Fact>]
-let ``parsing CursorDown works`` () =
+let ``CursorDown works`` () =
     parsing "\x1b[B" |> should resultIn [CursorDown 1]
     parsing "\x1b[13B" |> should resultIn [CursorDown 13]
 
 [<Fact>]
-let ``parsing CursorForward works`` () =
+let ``CursorForward works`` () =
     parsing "\x1b[C" |> should resultIn [CursorForward 1]
     parsing "\x1b[3C" |> should resultIn [CursorForward 3]
 
 [<Fact>]
-let ``parsing CursorRight works`` () =
+let ``CursorRight works`` () =
     parsing "\x1b[D" |> should resultIn [CursorBack 1]
     parsing "\x1b[5D" |> should resultIn [CursorBack 5]
 
 [<Fact>]
-let ``parsing CursorNextLine works`` () =
+let ``CursorNextLine works`` () =
     parsing "\x1b[E" |> should resultIn [CursorNextLine 1]
     parsing "\x1b[7E" |> should resultIn [CursorNextLine 7]
 
 [<Fact>]
-let ``parsing CursorPrevLine works`` () =
+let ``CursorPrevLine works`` () =
     parsing "\x1b[F" |> should resultIn [CursorPrevLine 1]
     parsing "\x1b[6F" |> should resultIn [CursorPrevLine 6]
 
 [<Fact>]
-let ``parsing CursorHorizontalAbs works`` () =
+let ``CursorHorizontalAbs works`` () =
     parsing "\x1b[G" |> should resultIn [CursorHorizontalAbs 1]
     parsing "\x1b[2G" |> should resultIn [CursorHorizontalAbs 2]
 
 [<Fact>]
-let ``parsing CursorPosition works`` () =
+let ``CursorPosition works`` () =
     parsing "\x1b[H" |> should resultIn [CursorPosition(1, 1)]
     parsing "\x1b[;3H" |> should resultIn [CursorPosition(1, 3)]
     parsing "\x1b[2;H" |> should resultIn [CursorPosition(2, 1)]
