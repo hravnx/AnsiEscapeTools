@@ -1,5 +1,7 @@
 ﻿namespace AnsiEscapeTools.Parser
 
+open System
+
 
 type AnsiEscapeChunk =
     | Empty
@@ -11,6 +13,9 @@ type AnsiEscapeParserResult =
 
 type AnsiEscapeParser() =
     member this.Parse (s:string) =
-        Success [Empty]
+        if(String.IsNullOrEmpty(s)) then
+            Success [Empty]
+        else
+            Success [Text s]
 
 

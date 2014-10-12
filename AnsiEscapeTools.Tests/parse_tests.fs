@@ -26,11 +26,21 @@ module private Helpers =
 
 let emptyResult = matcherOf "empty" (matchSuccessWith [Empty])
     
+let textResult txt = matcherOf "text" (matchSuccessWith [Text txt])
+
+
+let parser = new AnsiEscapeParser()
 
 [<Fact>]
 let ``parsing an empty string gives an empty result back`` () =
-    let parser = new AnsiEscapeParser()
     parser.Parse("") |> should be emptyResult
+
+
+[<Fact>]
+let ``parsing strings without ansi escapes results in a single Text result`` () =
+    parser.Parse("My text without any escapes") |> should be (textResult "My text without any escapes")
+    parser.Parse(" \t ") |> should be (textResult " \t ")
+
 
 
 
