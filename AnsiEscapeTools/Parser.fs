@@ -13,6 +13,7 @@ type AnsiEscapeSegment =
     | CursorPrevLine of int
     | CursorHorizontalAbs of int
     | CursorPosition of int * int
+    | EraseDisplay of int
 
 type AnsiEscapeParserResult =
     | Error of string * int * int
@@ -30,9 +31,9 @@ module private Helpers =
 
     let escapeMatcher = new Regex(escMatcherPattern, escMatcherOptions)
 
-    let argSplitter expected (args:string) =
+    let argSplitter expected defVal (args:string) =
         let defMap (s:string) =
-            if String.IsNullOrWhiteSpace(s) then 1
+            if String.IsNullOrWhiteSpace(s) then defVal
             else int (s.Trim())
 
         let parts = args.Split(';')
@@ -41,22 +42,23 @@ module private Helpers =
         if vals.Length >= expected then vals
         else Array.concat [|vals; Array.create (expected - vals.Length) 1|]
 
-    let oneArg (args:string) = (argSplitter 1 args).[0]
-    let twoArgs (args:string) = 
-        let parts = (argSplitter 2 args)
+    let oneArg defVal (args:string) = (argSplitter 1 defVal args).[0]
+    let twoArgs defVal (args:string) = 
+        let parts = (argSplitter 2 defVal args)
         (parts.[0], parts.[1])
         
 
     let escapeCode letter arglist =
         match letter with
-        | "A" -> CursorUp (arglist |> oneArg)
-        | "B" -> CursorDown (arglist |> oneArg)
-        | "C" -> CursorForward (arglist |> oneArg)
-        | "D" -> CursorBack (arglist |> oneArg)
-        | "E" -> CursorNextLine (arglist |> oneArg)
-        | "F" -> CursorPrevLine (arglist |> oneArg)
-        | "G" -> CursorHorizontalAbs (arglist |> oneArg)
-        | "H" -> CursorPosition (arglist |> twoArgs)
+        | "A" -> CursorUp (arglist |> oneArg 1)
+        | "B" -> CursorDown (arglist |> oneArg 1)
+        | "C" -> CursorForward (arglist |> oneArg 1)
+        | "D" -> CursorBack (arglist |> oneArg 1)
+        | "E" -> CursorNextLine (arglist |> oneArg 1)
+        | "F" -> CursorPrevLine (arglist |> oneArg 1)
+        | "G" -> CursorHorizontalAbs (arglist |> oneArg 1)
+        | "H" -> CursorPosition (arglist |> twoArgs 1)
+        | "J" -> EraseDisplay (arglist |> oneArg 0)
         | _ -> failwithf "Unsupported option %s" letter
 
     let rec parse (s:string) start (ms:MatchCollection) (idx:int) = seq {
