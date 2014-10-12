@@ -7,6 +7,12 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AnsiEscapeTools", "AnsiEsca
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AnsiEscapeTools.Tests", "AnsiEscapeTools.Tests\AnsiEscapeTools.Tests.fsproj", "{A0821A14-C22F-41E4-A883-5815CDFC007F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{57308435-35E9-4D00-913F-F847766C908B}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE.txt = LICENSE.txt
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
