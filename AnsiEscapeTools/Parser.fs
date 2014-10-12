@@ -9,9 +9,13 @@ type AnsiEscapeSegment =
     | CursorDown of int
     | CursorForward of int
     | CursorBack of int
+    | CursorNextLine of int
+    | CursorPrevLine of int
+    | CursorHorizontalAbs of int
+    | CursorPosition of int * int
 
 type AnsiEscapeParserResult =
-    | Error of (string * int * int)
+    | Error of string * int * int
     | Success of AnsiEscapeSegment seq
 
 
@@ -20,19 +24,39 @@ module private Helpers =
     open System.Text.RegularExpressions
 
     [<Literal>]
-    let escMatcherPattern = "\x1b\\[(\\d*(?:\\;\\d+)?)?([a-zA-Z])"
+    let escMatcherPattern = "\x1b\\[(\\d*(?:;\\d*)?)?([a-zA-Z])"
     [<Literal>]
     let escMatcherOptions = RegexOptions.Compiled ||| RegexOptions.CultureInvariant
 
     let escapeMatcher = new Regex(escMatcherPattern, escMatcherOptions)
 
-    let escapeCode (letter:string) (args:string) =
-        let paramParts = args.Split(';') |> Array.map int
+    let argSplitter expected (args:string) =
+        let defMap (s:string) =
+            if String.IsNullOrWhiteSpace(s) then 1
+            else int (s.Trim())
+
+        let parts = args.Split(';')
+        let vals = if parts.Length = 0 then Array.create expected 1
+                   else parts |> Array.map defMap
+        if vals.Length >= expected then vals
+        else Array.concat [|vals; Array.create (expected - vals.Length) 1|]
+
+    let oneArg (args:string) = (argSplitter 1 args).[0]
+    let twoArgs (args:string) = 
+        let parts = (argSplitter 2 args)
+        (parts.[0], parts.[1])
+        
+
+    let escapeCode (letter:string) (arglist:string) =
         match letter.[0] with
-        | 'A' -> CursorUp paramParts.[0]
-        | 'B' -> CursorDown paramParts.[0]
-        | 'C' -> CursorForward paramParts.[0]
-        | 'D' -> CursorBack paramParts.[0]
+        | 'A' -> CursorUp (arglist |> oneArg)
+        | 'B' -> CursorDown (arglist |> oneArg)
+        | 'C' -> CursorForward (arglist |> oneArg)
+        | 'D' -> CursorBack (arglist |> oneArg)
+        | 'E' -> CursorNextLine (arglist |> oneArg)
+        | 'F' -> CursorPrevLine (arglist |> oneArg)
+        | 'G' -> CursorHorizontalAbs (arglist |> oneArg)
+        | 'H' -> CursorPosition (arglist |> twoArgs)
         | _ -> failwithf "Unsupported option %s" letter
 
     let rec parse (s:string) start (ms:MatchCollection) idx = seq {
@@ -43,8 +67,6 @@ module private Helpers =
              yield escapeCode m.Groups.[2].Value m.Groups.[1].Value
              yield! parse s (m.Index + m.Length) ms (idx+1)
         }
-
-
 
 
 type AnsiEscapeParser() =
