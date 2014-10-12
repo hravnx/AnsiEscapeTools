@@ -53,6 +53,17 @@ let ``parsing strings with one or more escape codes works`` () =
     parser.Parse("abc\x1b[12Adef\x1b[4A") |> should be (parseResult [Text "abc"; CursorUp 12; Text "def"; CursorUp 4])
     parser.Parse("abc\x1b[12A\x1b[4A") |> should be (parseResult [Text "abc"; CursorUp 12; CursorUp 4])
 
+[<Fact>]
+let ``parsing CursorDown works`` () =
+    parser.Parse("\x1b[13B") |> should be (parseResult [CursorDown 13])
+
+[<Fact>]
+let ``parsing CursorForward works`` () =
+    parser.Parse("\x1b[3C") |> should be (parseResult [CursorForward 3])
+
+[<Fact>]
+let ``parsing CursorRight works`` () =
+    parser.Parse("\x1b[5D") |> should be (parseResult [CursorBack 5])
 
 
 

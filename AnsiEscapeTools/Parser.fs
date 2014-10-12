@@ -6,6 +6,9 @@ type AnsiEscapeChunk =
     | Empty
     | Text of string
     | CursorUp of int
+    | CursorDown of int
+    | CursorForward of int
+    | CursorBack of int
 
 type AnsiEscapeParserResult =
     | Error of (string * int * int)
@@ -27,6 +30,9 @@ module private Helpers =
         let paramParts = args.Split(';') |> Array.map int
         match letter.[0] with
         | 'A' -> CursorUp paramParts.[0]
+        | 'B' -> CursorDown paramParts.[0]
+        | 'C' -> CursorForward paramParts.[0]
+        | 'D' -> CursorBack paramParts.[0]
         | _ -> failwithf "Unsupported option %s" letter
 
     let rec parse (s:string) start (ms:MatchCollection) idx = seq {
