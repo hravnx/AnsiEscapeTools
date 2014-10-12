@@ -8,7 +8,6 @@ open AnsiEscapeTools.Parser
 
 [<AutoOpen>]
 module private Helpers =
-    open System.Diagnostics
 
     let seqEq a b = 
         (Seq.length a = Seq.length b) && ((a, b) ||> Seq.forall2 (=))
