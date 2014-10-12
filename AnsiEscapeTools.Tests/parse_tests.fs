@@ -102,5 +102,15 @@ let ``CursorPosition works`` () =
     parsing "\x1b[2;3H" |> should resultIn [CursorPosition(2, 3)]
 
 [<Fact>]
-let ``eraseDisplay works`` () =
+let ``EraseDisplay works`` () =
     parsing "\x1b[J" |> should resultIn [EraseDisplay 0]
+    parsing "\x1b[1J" |> should resultIn [EraseDisplay 1]
+    parsing "\x1b[2J" |> should resultIn [EraseDisplay 2]
+
+[<Fact>]
+let ``EraseInLine`` () =
+    parsing "\x1b[K" |> should resultIn [EraseInLine 0]
+    parsing "\x1b[1K" |> should resultIn [EraseInLine 1]
+    parsing "\x1b[2K" |> should resultIn [EraseInLine 2]
+
+
